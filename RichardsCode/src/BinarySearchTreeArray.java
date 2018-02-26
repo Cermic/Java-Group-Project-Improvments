@@ -1,3 +1,4 @@
+
 import java.util.*;
 
 /**
@@ -9,10 +10,10 @@ public class BinarySearchTreeArray<E extends Comparable<E>>
         extends AbstractSet<E> {
 
     protected Entry<E>[] tree; // The entries for this binary search tree
-   
+
     protected int root, // The index of root element (zero when not empty).
-                  size;  // The number of elements in this binary search tree.
-    
+            size;  // The number of elements in this binary search tree.
+
     protected static final int NIL = -1;  // represents a "null reference".
     protected static final int DEFAULT_SIZE = 16;  // For the array, tree.
 
@@ -33,12 +34,12 @@ public class BinarySearchTreeArray<E extends Comparable<E>>
     } // default constructor
 
     /**
-     * Initialises this BinarySearchTreeArray object to be empty, to
-     * contain only elements of type E, to be ordered by the Comparable
-     * interface, and to contain no duplicate elements.
+     * Initialises this BinarySearchTreeArray object to be empty, to contain
+     * only elements of type E, to be ordered by the Comparable interface, and
+     * to contain no duplicate elements.
      *
-     * @param initialCapacity the initial capacity of the array object
-     * used to store the entries of this binary search tree.
+     * @param initialCapacity the initial capacity of the array object used to
+     * store the entries of this binary search tree.
      */
     public BinarySearchTreeArray(int initialCapacity) {
         if (initialCapacity < 1) {
@@ -73,21 +74,22 @@ public class BinarySearchTreeArray<E extends Comparable<E>>
         }
     } // copy constructor
 
-
     // For testing purposes, displays the whole tree array contents and
     // the values of other fields of the class (it would be better
     // to have this return a String for the application to display, but
     // the project specification suggested a display method).
     protected void displayTreeArray() {
-        System.out.println("Length = " + tree.length + ", size = " + size
+        System.out.println("\nLength = " + tree.length + ", size = " + size
                 + ", listSize = " + freeList.size());
         System.out.println("List = " + freeList);
         System.out.println(Arrays.toString(tree));
+        System.out.println("\n");
+
     }
 
     /**
-     * Returns true if obj is an instance of Set with the same elements as
-     * this binary search tree, otherwise returns false.
+     * Returns true if obj is an instance of Set with the same elements as this
+     * binary search tree, otherwise returns false.
      *
      * @param obj the object to compare with this binary search tree
      * @return true if obj is a Set equal to this tree, otherwise false
@@ -181,12 +183,12 @@ public class BinarySearchTreeArray<E extends Comparable<E>>
      * @param element the element whose presence is ensured in this
      * BinarySearchTree object.
      *
-     * @return true if this BinarySearchTree object changed as a result of
-     * this method call (that is, if element was actually inserted); otherwise,
+     * @return true if this BinarySearchTree object changed as a result of this
+     * method call (that is, if element was actually inserted); otherwise,
      * return false.
      *
-     * @throws ClassCastException if element cannot be compared to the
-     * elements already in this BinarySearchTree object.
+     * @throws ClassCastException if element cannot be compared to the elements
+     * already in this BinarySearchTree object.
      * @throws NullPointerException if element is null.
      */
     @Override
@@ -245,14 +247,14 @@ public class BinarySearchTreeArray<E extends Comparable<E>>
     } // method add
 
     /**
-     * Determines if there is an element in this BinarySearchTreeArray
-     * object that equals a specified element. The worstTime(n) is O(n) and
+     * Determines if there is an element in this BinarySearchTreeArray object
+     * that equals a specified element. The worstTime(n) is O(n) and
      * averageTime(n) is O(log n).
      *
      * @param obj the element sought in this BinarySearchTree object.
      *
-     * @return true if there is an element in this BinarySearchTreeArray
-     * object that equals obj; otherwise, return false.
+     * @return true if there is an element in this BinarySearchTreeArray object
+     * that equals obj; otherwise, return false.
      *
      * @throws ClassCastException if obj cannot be compared to the elements in
      * this BinarySearchTree object.
@@ -294,9 +296,9 @@ public class BinarySearchTreeArray<E extends Comparable<E>>
      * @param obj the object whose absence is ensured in this
      * BinarySearchTreeArray object.
      *
-     * @return true if this BinarySearchTree object changed as a result of
-     * this method call (that is, if obj was actually removed); otherwise,
-     * return false.
+     * @return true if this BinarySearchTree object changed as a result of this
+     * method call (that is, if obj was actually removed); otherwise, return
+     * false.
      *
      * @throws ClassCastException if obj cannot be compared to the elements
      * already in this BinarySearchTree object.
@@ -314,8 +316,8 @@ public class BinarySearchTreeArray<E extends Comparable<E>>
     } // method remove
 
     /**
-     * Removes all of the elements from this collection. The collection will
-     * be empty after this method returns.
+     * Removes all of the elements from this collection. The collection will be
+     * empty after this method returns.
      */
     @Override
     public void clear() {
@@ -455,10 +457,10 @@ public class BinarySearchTreeArray<E extends Comparable<E>>
         } // e has no right child
     } // method successor
 
-   /*
+    /*
     * An Iterator class for the BinarySearchTreeArray class. An instance
     * of this class is returned by a call to the iterator() method.
-    */
+     */
     protected class TreeIterator implements Iterator<E> {
 
         protected int lastReturned = NIL,
@@ -499,15 +501,14 @@ public class BinarySearchTreeArray<E extends Comparable<E>>
          * positioned at before this call, and advances this TreeIterator
          * object. The worstTime(n) is O(n) and averageTime(n) is constant.
          *
-         * @return the element this TreeIterator object was positioned at 
-         * before this call.
+         * @return the element this TreeIterator object was positioned at before
+         * this call.
          *
          * @throws NoSuchElementException if this TreeIterator object was not
          * positioned at an Entry before this call.
-         * @throws ConcurrentModificationException if the binary search
-         * tree has been modified since the previous call of the next() 
-         * method by a call to one of the mutator methods of the binary
-         * search tree.
+         * @throws ConcurrentModificationException if the binary search tree has
+         * been modified since the previous call of the next() method by a call
+         * to one of the mutator methods of the binary search tree.
          */
         @Override
         public E next() {
@@ -519,7 +520,7 @@ public class BinarySearchTreeArray<E extends Comparable<E>>
             }
             lastReturned = next;
             next = successor(next);
-            return tree[lastReturned].element;
+            return (E) tree[lastReturned].element;
         } // method next
 
         /**
@@ -527,10 +528,10 @@ public class BinarySearchTreeArray<E extends Comparable<E>>
          * TreeIterator object's next() method. The worstTime(n) is O(n) and
          * averageTime(n) is constant.
          *
-         * @throws IllegalStateException - if this TreeIterator's next() 
-         * method was not called before this call, or if this TreeIterator's
-         * remove() method was called between the call to the next() method 
-         * and this call.
+         * @throws IllegalStateException - if this TreeIterator's next() method
+         * was not called before this call, or if this TreeIterator's remove()
+         * method was called between the call to the next() method and this
+         * call.
          */
         @Override
         public void remove() {
@@ -564,8 +565,8 @@ public class BinarySearchTreeArray<E extends Comparable<E>>
         /**
          * Initialises this Entry object.
          *
-         * This default constructor is defined for the sake of subclasses
-         * of the BinarySearchTreeArray class.
+         * This default constructor is defined for the sake of subclasses of the
+         * BinarySearchTreeArray class.
          */
         public Entry() {
             this(null, NIL);
@@ -581,7 +582,7 @@ public class BinarySearchTreeArray<E extends Comparable<E>>
 
         /**
          * For testing and debugging purposes.
-         * 
+         *
          * @return a String representation of the state of this Entry.
          */
         @Override

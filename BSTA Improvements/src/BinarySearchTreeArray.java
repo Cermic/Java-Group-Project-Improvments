@@ -2,7 +2,10 @@
 import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.Arrays;
+import java.util.ConcurrentModificationException;
+import java.util.LinkedList;
 import java.util.NoSuchElementException;
+import java.util.Queue;
 
 /**
  *
@@ -10,16 +13,21 @@ import java.util.NoSuchElementException;
  */
 public class BinarySearchTreeArray<E> extends AbstractSet<E> {
 
-    Entry[] tree;
+    protected Entry<E>[] tree;
     int root, size;
     protected int modCount = 0;
     protected static final int NIL = -1;
     protected static final int DEFAULT_SIZE = 16;
 
+    // The freeList is a queue of array positions that have been
+    // emptied through the removal of an element and are now available
+    // to store a new element as suggested in Richard Beeby's code.
+    protected Queue<Integer> freeList = new LinkedList<>();
+
     protected static class Entry<E> {
 
         E element;
-        protected int left, right, parent;
+        protected int left = NIL, right = NIL, parent;
 
         /**
          * Initializes this Entry object.
@@ -28,6 +36,7 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
          * BinarySearchTreeArray class.
          */
         public Entry() {
+            this(null, NIL);
         }
 
         /**
@@ -36,9 +45,18 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
         public Entry(E element, int parent) {
             this.element = element;
             this.parent = parent;
-            this.left = -1;
-            this.right = -1;
         }// constructor
+
+        /**
+         * For testing and debugging purposes.
+         *
+         * @return a String representation of the state of this Entry.
+         */
+        @Override
+        public String toString() {
+            return "Element=" + element + " parent=" + parent
+                    + " left=" + left + " right=" + right;
+        }
     }// class Entry
 
     /**
@@ -60,13 +78,13 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
      * @throws IllegalArgumentException - if capacity is non-positive
      */
     public BinarySearchTreeArray(int capacity) {
-        if (capacity < 0) {
+        if (capacity < 1) {
             throw new IllegalArgumentException("Non-positive capacity: "
                     + capacity);
         }
         root = NIL;
         size = 0;
-        //modCount = 0;
+        modCount = 0;
         tree = new Entry[capacity];
     }
 
@@ -80,6 +98,18 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
     @Override
     public int size() {
         return size;
+    }
+
+    // For testing purposes, displays the whole tree array contents and
+    // the values of other fields of the class (it would be better
+    // to have this return a String for the application to display, but
+    // the project specification suggested a display method).
+    protected void displayTreeArray() {
+        System.out.println("\nLength = " + tree.length + ", size = " + size
+                + ", listSize = " + freeList.size());
+        System.out.println("List = " + freeList);
+        System.out.println(Arrays.toString(tree));
+        System.out.println("\n");
     }
 
     /**
@@ -142,7 +172,6 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
      */
     @Override
     public boolean add(E element) {
-        int parent = 0;
         if (element == null) {
             throw new NullPointerException();
         }
@@ -153,12 +182,19 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
             root = 0;
             tree[root] = new Entry(element, NIL);
             size++;
-            //modCount++;
+            modCount++;
             return true;
         } else {
-            int i = 0, comp;
+            int parent = root;
+            int comp, nextSlot;
             Entry<E> temp = tree[root];
-            while (true) {
+            if (freeList.size() > 0) {
+                nextSlot = freeList.peek();
+            } else {
+                nextSlot = size;
+            }
+            boolean found = false;
+            while (!found) {
                 comp = ((Comparable) element).compareTo(temp.element);
                 if (comp == 0) {
                     return false;
@@ -166,25 +202,24 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
                 if (comp < 0) {
                     if (temp.left != NIL) {
                         parent = temp.left;
-                        temp = tree[temp.left];
+                        temp = tree[parent];
                     } else {
-                        tree[size] = new Entry<>(element, parent);
-                        tree[parent].left = size;
-                        size++;
-                        //modCount++;
-                        return true;
-                    }
+                        temp.left = nextSlot;
+                        found = true;
+                    }// temp.left ==NIL
                 } else if (temp.right != NIL) {
                     parent = temp.right;
-                    temp = tree[temp.right];
+                    temp = tree[parent];
                 } else {
-                    tree[size] = new Entry(element, parent);
-                    tree[parent].right = size;
-                    size++;
-                    //modCount++;
-                    return true;
-                }
-            }
+                    temp.right = nextSlot;
+                    found = true;
+                }// temp.right == NIL
+            }//while
+            tree[nextSlot] = new Entry<>(element, parent);
+            size++;
+            freeList.poll();
+            modCount++;
+            return true;
         }
     }
 
@@ -210,7 +245,7 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
             return false;
         }
         deleteEntry(e);
-        //modCount++;                                                             //Increments as an object has been removed from the tree
+        modCount++;                                                             //Increments as an object has been removed from the tree
         return true;
     } // method remove
 
@@ -229,25 +264,19 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
      *
      */
     protected int getEntry(Object obj) {
-        int comp,e = root;
+        int comp, e = root;
 
-        if (obj == null) {
-            throw new NullPointerException();
-        }
-        if (e != NIL) {
-                while (e != NIL) {
-                    comp = ((Comparable) obj).compareTo(tree[e].element);
-                    if (comp == 0) {
-                        return e;
-                    } else if (comp < 0) {
-                        e = tree[e].left;
-                    } else {
-                        e = tree[e].right;
-                    }
-                } // while
-        }else {
-                System.out.println("Tree is empty");
+        while (e != NIL) {
+            comp = ((Comparable) obj).compareTo(tree[e].element);
+            if (comp == 0) {
+                return e;
+            } else if (comp < 0) {
+                e = tree[e].left;
+            } else {
+                e = tree[e].right;
             }
+        } // while
+
         return NIL;
     } // method getEntry
 
@@ -263,50 +292,56 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
      *
      */
     //this whole section needs to be revised for readability and to accomodate reordering the tree when an entry is deleted from the middle of the array
-    protected Entry<E> deleteEntry(int p) {
-
+    protected Entry<E> deleteEntry(int pInput) {
+        size--;
+        Entry<E> p = tree[pInput];
         // If p has two children, replace p's element with p's successor's
         // element, then make p reference that successor.
-        if (tree[p].left != NIL && tree[p].right != NIL) {
-            int s = successor(p);
-            tree[p].element = tree[s].element;
+        if (p.left != NIL && p.right != NIL) {
+            pInput = successor(pInput);
+            Entry<E> s = tree[pInput];
+            p.element = s.element;
             p = s;
-        }
+        } //p has two children
+
         // At this point, p has either no children or one child.
-        int replacement = NIL;
-        if (tree[p].left != NIL) {
-            replacement = tree[p].left;
-        } else if (tree[p].right != NIL) {
-            replacement = tree[p].right;
+        int replacement;
+        if (p.left != NIL) {
+            replacement = p.left;
+        } else {
+            replacement = p.right;
         }
+
         // If p has at least one child, link replacement to p.parent.
         if (replacement != NIL) {
-            tree[replacement].parent = tree[p].parent;
-            if (tree[p].parent == NIL) {
-                root = replacement;
-            } else if (p == tree[tree[p].parent].left) {
-                if (tree[p].left != NIL) {
-                    tree[tree[p].parent].left = tree[p].left;
-                } else {
-                    tree[tree[p].parent].left = tree[p].right;
-                }
-            } else if (tree[p].left != NIL) {
-                tree[tree[p].parent].left = tree[p].left;
-            } else {
-                tree[tree[p].parent].right = tree[p].right;
+            tree[replacement].parent = p.parent;
+            tree[pInput] = tree[replacement];
+            if (tree[replacement].left != NIL) {
+                tree[tree[replacement].left].parent = pInput;
             }
-        } // p has a parent but no children  
-        else if (tree[p].parent == NIL) {
+            if (tree[replacement].right != NIL) {
+                tree[tree[replacement].right].parent = pInput;
+            }
+            tree[replacement] = null;
+            freeList.add(replacement);
+            return tree[replacement];
+        }//p has at least one child
+        else if (p.parent == NIL) {                                             //if tree[pInput] has no parent = tree[pInput] must be the root
             tree[root] = null;
-        } else if (p == tree[tree[p].parent].left) {
-            tree[tree[p].parent].left = NIL;
+            freeList.add(root);
+            root = NIL;
         } else {
-            tree[tree[p].parent].right = NIL;
-        }
-        tree[p] = null;
-        size--;
-        return tree[p];
-    }
+            Entry<E> parentP = tree[p.parent];
+            freeList.add(pInput);
+            tree[pInput] = null;
+            if (parentP.left == pInput) {                                       //if tree[pInput] is the left child of its parent
+                parentP.left = NIL;
+            } else {
+                parentP.right = NIL;
+            }
+        }//p has a parent but no children
+        return tree[pInput];
+    }//method deleteEntry
 
     /**
      * Finds the successor of a specified Entry object in this
@@ -359,6 +394,7 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
     protected class ArrayIterator implements Iterator<E> {
 
         protected int next = NIL, lastReturned = NIL;
+        protected final int modCountOnEntry;
 
         /**
          * Positions this ArrayIterator to the smallest element, according to
@@ -373,6 +409,7 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
                     next = tree[next].left;
                 }
             }
+            modCountOnEntry = modCount;
         }
 
         /**
@@ -401,6 +438,9 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
          *
          */
         public E next() {
+            if (modCountOnEntry != modCount) {
+                throw new ConcurrentModificationException();
+            }
             if (next == NIL) {
                 throw new NoSuchElementException();
             }
@@ -424,13 +464,14 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
             if (lastReturned == NIL) {
                 throw new IllegalStateException();
             }
-            if (tree[lastReturned].left != NIL && tree[lastReturned].right != NIL) {
-
+            if (modCountOnEntry != modCount) {
+                throw new ConcurrentModificationException();
             }
-            deleteEntry(lastReturned);
+            Entry deleted = deleteEntry(lastReturned);
+            if (tree[next] == deleted) {
+                next = lastReturned;
+            }
             lastReturned = NIL;
-            //modCount++;
-            //expectedModCount++;
         }
     }
 }

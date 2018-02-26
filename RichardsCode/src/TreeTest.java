@@ -17,49 +17,8 @@ public class TreeTest {
 
     public static void main(String[] args) {
 
-        BinarySearchTree<String> testTree = new BinarySearchTree<>();
         BinarySearchTreeArray<String> testTreeArray = new BinarySearchTreeArray<>(4);
 
-        //tests that methods dont break on an empty tree
-        testTreeArray.getEntry("dog");
-        testTreeArray.contains("dog");
-        testTreeArray.remove("dog");
-        
-        //tests if itterator breaks if called on an empty tree
-        int count = 0;
-        int testSize = testTreeArray.size();
-        Iterator titr = testTreeArray.iterator();
-        while (titr.hasNext()) {
-            Object current = titr.next();
-            System.out.println("Animal: " + current);//Remove this before hand in
-            count++;
-            if (count == 4) {
-                titr.remove();
-            }
-            if (count > testSize * 2) {
-                System.out.println("Apparent infinite loop when appending"
-                        + " while iterating");
-                break;
-            }
-        }
-        
-        testTree.add("dog");
-        testTree.add("turtle");
-        testTree.add("cat");
-        testTree.add("bird");
-        testTree.add("ferret");
-        testTree.add("deer");
-        testTree.add("zebra");
-        testTree.add("frog");
-        System.out.println(testTree.size());
-        System.out.println(testTree.contains("ferret"));
-
-        System.out.println(testTree.remove("cat"));
-        System.out.println(testTree.remove("dog"));
-        System.out.println(testTree.remove("turtle"));
-
-        
-        
         testTreeArray.add("dog");
         testTreeArray.add("turtle");
         testTreeArray.add("cat");
@@ -78,8 +37,8 @@ public class TreeTest {
         System.out.println(testTreeArray.remove("dog"));
         System.out.println(testTreeArray.remove("turtle"));
 
-        count = 0;
-        testSize = testTreeArray.size();
+        int count = 0;
+        int testSize = testTreeArray.size();
         Iterator itr = testTreeArray.iterator();
         while (itr.hasNext()) {
             Object current = itr.next();
