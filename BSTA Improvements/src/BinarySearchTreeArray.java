@@ -6,9 +6,11 @@ import java.util.ConcurrentModificationException;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.Queue;
+import java.util.Set;
 
 /**
  *
+ * @param <E>
  * @authors B00308929 && B00308927
  */
 public class BinarySearchTreeArray<E> extends AbstractSet<E> {
@@ -41,6 +43,9 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
 
         /**
          * Initializes this Entry object from element and parent.
+         * 
+         * @param element - The element data for the Entry.
+         * @param parent - The parent Entry of the Entry being created.
          */
         public Entry(E element, int parent) {
             this.element = element;
@@ -87,6 +92,60 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
         modCount = 0;
         tree = new Entry[capacity];
     }
+    
+     /**
+     * Initialises this BinarySearchTreeArray object to contain a copy of
+     * specified BinarySearchTreeArray object.
+     *
+     * @param otherTree the specified BinarySearchTreeArray object that this
+     * BinarySearchTreeArray object will be assigned a copy of.
+     */
+    public BinarySearchTreeArray(
+            BinarySearchTreeArray<? extends E> otherTree) {
+        root = otherTree.root;
+        modCount = 0;
+        size = otherTree.size;
+        tree = new Entry[otherTree.tree.length];
+        for (int i = 0; i < tree.length; i++) {
+            Entry<? extends E> current = otherTree.tree[i];
+            if (current != null) {
+                tree[i] = new Entry(current.element, current.parent);
+                tree[i].left = current.left;
+                tree[i].right = current.right;
+            }
+        }
+    } // copy constructor
+    
+    /**
+     * Returns true if obj is an instance of Set with the same elements as this
+     * binary search tree, otherwise returns false.
+     *
+     * @param obj the object to compare with this binary search tree
+     * @return true if obj is a Set equal to this tree, otherwise false
+     */
+    @Override
+    public boolean equals(Object obj) {
+        // Note: this is an override of the equals() method for the Set
+        // interface. The equals() method that compares two trees for
+        // structural equality, corresponding to the one in BinarySearchTree,
+        // is rewritten below as an overload of equals() that takes a
+        // BinarySearchTreeArray instance as parameter, as it does not 
+        // conform to the contract for equals() for a Set, which requires
+        // only that the two Sets contain exactly the same set of elements.
+        if (!(obj instanceof Set)) {
+            return false;
+        }
+        Set<? extends E> other = (Set<E>) obj;
+        if (size != other.size()) {
+            return false;
+        }
+        for (E current : this) {
+            if (!other.contains(current)) {
+                return false;
+            }
+        }
+        return true;
+    } // method equals Object
 
     /**
      * Returns the size of this BinarySearchTreeArray object. worstTime(n) is
@@ -239,6 +298,7 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
      * the elements of this BinarySearchTreeArray object.
      * @throws NullPointerException – if obj is null.
      */
+    @Override
     public boolean remove(Object obj) {
         int e = getEntry(obj);
         if (e == NIL) {
@@ -284,7 +344,7 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
      * Deletes the element in a specified Entry object from this
      * BinarySearchTreeArray.
      *
-     * @param p – the Entry object whose element is to be deleted from this
+     * @param pInput – the Entry object whose element is to be deleted from this
      * BinarySearchTreeArray object.
      *
      * @return the Entry object that was actually deleted from this
@@ -421,6 +481,7 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
          * accessed by this ArrayIterator object; otherwise, return false.
          *
          */
+        @Override
         public boolean hasNext() {
             return next != NIL;
         }
@@ -437,6 +498,7 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
          * positioned at an Entry before this call.
          *
          */
+        @Override
         public E next() {
             if (modCountOnEntry != modCount) {
                 throw new ConcurrentModificationException();
@@ -460,6 +522,7 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
          * call.
          *
          */
+        @Override
         public void remove() {
             if (lastReturned == NIL) {
                 throw new IllegalStateException();
