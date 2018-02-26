@@ -10,14 +10,15 @@ import java.util.NoSuchElementException;
  */
 public class BinarySearchTreeArray<E> extends AbstractSet<E> {
 
-    private static final int DEFAULT_SIZE = 16;
-    Entry<E>[] tree;
+    Entry[] tree;
     int root, size;
     protected int modCount = 0;
+    protected static final int NIL = -1;
+    protected static final int DEFAULT_SIZE = 16;
 
-    protected class Entry<E> {
+    protected static class Entry<E> {
 
-        protected E element;
+        E element;
         protected int left, right, parent;
 
         /**
@@ -46,8 +47,7 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
      * to contain no duplicate elements.
      */
     public BinarySearchTreeArray() {
-        tree = new Entry[DEFAULT_SIZE];
-        size = 0;
+        this(DEFAULT_SIZE);
     }//default constructor
 
     /**
@@ -60,13 +60,14 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
      * @throws IllegalArgumentException - if capacity is non-positive
      */
     public BinarySearchTreeArray(int capacity) {
-        if (capacity <= 0) {
+        if (capacity < 0) {
             throw new IllegalArgumentException("Non-positive capacity: "
                     + capacity);
         }
-        tree = new Entry[capacity];
+        root = NIL;
         size = 0;
         //modCount = 0;
+        tree = new Entry[capacity];
     }
 
     /**
@@ -97,18 +98,7 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
      */
     @Override
     public boolean contains(Object obj) {
-        if(obj == null)
-        {
-            throw new NullPointerException();
-        }
-         if(!(obj instanceof String)) // Checks to see whether the object is not a String type, if so, throws ClassCastException.
-        {
-            throw new ClassCastException();
-        }
-        if (tree[root] == null) {
-            return false;
-        }
-        return (containsElement(tree[root], obj)); //To change body of generated methods, choose Tools | Templates.
+        return getEntry(obj) != NIL; //To change body of generated methods, choose Tools | Templates.
     }
 
     protected boolean containsElement(Entry<E> e, Object obj) {
@@ -122,11 +112,11 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
         if (comp == 0) {
             return true;
         }
-        if (temp.left == -1) {
+        if (temp.left == NIL) {
             return false;
         } else if (comp < 0) {
             return containsElement(tree[temp.left], obj);
-        } else if (temp.right == -1) {
+        } else if (temp.right == NIL) {
             return false;
         } else {
             return containsElement(tree[temp.right], obj);
@@ -156,38 +146,35 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
         if (element == null) {
             throw new NullPointerException();
         }
-        if(!(element instanceof String)) // Checks to see whether the object is not a String type, if so, throws ClassCastException.
-        {
-            throw new ClassCastException();
-        }
         if (this.size == tree.length) {
             tree = Arrays.copyOf(tree, (tree.length * 2));
         }
-        if (tree[root] == null) {
-            tree[root] = new Entry(element, -1);
+        if (root == NIL) {
+            root = 0;
+            tree[root] = new Entry(element, NIL);
             size++;
             //modCount++;
             return true;
         } else {
             int i = 0, comp;
-            Entry temp = tree[root];
+            Entry<E> temp = tree[root];
             while (true) {
                 comp = ((Comparable) element).compareTo(temp.element);
                 if (comp == 0) {
                     return false;
                 }
                 if (comp < 0) {
-                    if (temp.left != -1) {
+                    if (temp.left != NIL) {
                         parent = temp.left;
                         temp = tree[temp.left];
                     } else {
-                        tree[size] = new Entry(element, parent);
+                        tree[size] = new Entry<>(element, parent);
                         tree[parent].left = size;
                         size++;
                         //modCount++;
                         return true;
                     }
-                } else if (temp.right != -1) {
+                } else if (temp.right != NIL) {
                     parent = temp.right;
                     temp = tree[temp.right];
                 } else {
@@ -219,12 +206,8 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
      */
     public boolean remove(Object obj) {
         int e = getEntry(obj);
-        if (e == -1) {
+        if (e == NIL) {
             return false;
-        }
-        if(!(obj instanceof String)) // Checks to see whether the object is not a String type, if so, throws ClassCastException.
-        {
-            throw new ClassCastException();
         }
         deleteEntry(e);
         //modCount++;                                                             //Increments as an object has been removed from the tree
@@ -246,27 +229,26 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
      *
      */
     protected int getEntry(Object obj) {
-        int comp;
+        int comp,e = root;
 
         if (obj == null) {
             throw new NullPointerException();
         }
-        if(!(obj instanceof String)) // Checks to see whether the object is not a String type, if so, throws ClassCastException.
-        {
-            throw new ClassCastException();
-        }
-        int e = root;
-        while (e != -1) {
-            comp = ((Comparable) obj).compareTo(tree[e].element);
-            if (comp == 0) {
-                return e;
-            } else if (comp < 0) {
-                e = tree[e].left;
-            } else {
-                e = tree[e].right;
+        if (e != NIL) {
+                while (e != NIL) {
+                    comp = ((Comparable) obj).compareTo(tree[e].element);
+                    if (comp == 0) {
+                        return e;
+                    } else if (comp < 0) {
+                        e = tree[e].left;
+                    } else {
+                        e = tree[e].right;
+                    }
+                } // while
+        }else {
+                System.out.println("Tree is empty");
             }
-        } // while
-        return -1;
+        return NIL;
     } // method getEntry
 
     /**
@@ -280,47 +262,48 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
      * BinarySearchTreeArray object.
      *
      */
+    //this whole section needs to be revised for readability and to accomodate reordering the tree when an entry is deleted from the middle of the array
     protected Entry<E> deleteEntry(int p) {
 
         // If p has two children, replace p's element with p's successor's
         // element, then make p reference that successor.
-        if (tree[p].left != -1 && tree[p].right != -1) {
+        if (tree[p].left != NIL && tree[p].right != NIL) {
             int s = successor(p);
             tree[p].element = tree[s].element;
             p = s;
         }
         // At this point, p has either no children or one child.
-        int replacement = -1;
-        if (tree[p].left != -1) {
+        int replacement = NIL;
+        if (tree[p].left != NIL) {
             replacement = tree[p].left;
-        } else if (tree[p].right != -1) {
+        } else if (tree[p].right != NIL) {
             replacement = tree[p].right;
         }
         // If p has at least one child, link replacement to p.parent.
-        if (replacement != -1) {
+        if (replacement != NIL) {
             tree[replacement].parent = tree[p].parent;
-            if (tree[p].parent == -1) {
+            if (tree[p].parent == NIL) {
                 root = replacement;
             } else if (p == tree[tree[p].parent].left) {
-                if (tree[p].left != -1) {
+                if (tree[p].left != NIL) {
                     tree[tree[p].parent].left = tree[p].left;
                 } else {
                     tree[tree[p].parent].left = tree[p].right;
                 }
-            } else if (tree[p].left != -1) {
+            } else if (tree[p].left != NIL) {
                 tree[tree[p].parent].left = tree[p].left;
             } else {
                 tree[tree[p].parent].right = tree[p].right;
             }
         } // p has a parent but no children  
-        else if (tree[p].parent == -1) {
-            tree[root].element = null;
+        else if (tree[p].parent == NIL) {
+            tree[root] = null;
         } else if (p == tree[tree[p].parent].left) {
-            tree[tree[p].parent].left = -1;
+            tree[tree[p].parent].left = NIL;
         } else {
-            tree[tree[p].parent].right = -1;
+            tree[tree[p].parent].right = NIL;
         }
-        tree[p].element = null;
+        tree[p] = null;
         size--;
         return tree[p];
     }
@@ -336,24 +319,22 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
      *
      */
     protected int successor(int e) {
-        if (e == -1) {
-            return -1;
-        } else if (tree[e].right != -1) {
+        if (e == NIL) {
+            return NIL;
+        } else if (tree[e].right != NIL) {
             // successor is leftmost Entry in right subtree of e
             int p = tree[e].right;
-            while (tree[p].left != -1) {
+            while (tree[p].left != NIL) {
                 p = tree[p].left;
             }
             return p;
-
         } // e has a right child
         else {
-
             // go up the tree to the left as far as possible, then go up
             // to the right.
             int p = tree[e].parent;
             int ch = e;
-            while (p != -1 && ch == tree[p].right) {
+            while (p != NIL && ch == tree[p].right) {
                 ch = p;
                 p = tree[p].parent;
             } // while
@@ -377,7 +358,7 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
 
     protected class ArrayIterator implements Iterator<E> {
 
-        protected int next, lastReturned = -1;
+        protected int next = NIL, lastReturned = NIL;
 
         /**
          * Positions this ArrayIterator to the smallest element, according to
@@ -386,9 +367,9 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
          *
          */
         protected ArrayIterator() {
-            next = root;
-            if (next != -1) {
-                while (tree[next].left != -1) {
+            if (root != NIL) {
+                next = root;
+                while (tree[next].left != NIL) {
                     next = tree[next].left;
                 }
             }
@@ -404,7 +385,7 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
          *
          */
         public boolean hasNext() {
-            return next != -1;
+            return next != NIL;
         }
 
         /**
@@ -420,12 +401,12 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
          *
          */
         public E next() {
-             if (next == -1) {
+            if (next == NIL) {
                 throw new NoSuchElementException();
             }
             lastReturned = next;
             next = successor(next);
-            return tree[lastReturned].element;
+            return (E) tree[lastReturned].element;
         }
 
         /**
@@ -440,14 +421,14 @@ public class BinarySearchTreeArray<E> extends AbstractSet<E> {
          *
          */
         public void remove() {
-            if (lastReturned == -1) {
+            if (lastReturned == NIL) {
                 throw new IllegalStateException();
             }
-            if (tree[lastReturned].left != -1 && tree[lastReturned].right != -1) {
+            if (tree[lastReturned].left != NIL && tree[lastReturned].right != NIL) {
 
             }
             deleteEntry(lastReturned);
-            lastReturned = -1;
+            lastReturned = NIL;
             //modCount++;
             //expectedModCount++;
         }

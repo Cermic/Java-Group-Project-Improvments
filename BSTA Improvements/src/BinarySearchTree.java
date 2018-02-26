@@ -92,6 +92,7 @@ public class BinarySearchTree<E> extends AbstractSet<E> {
      * the elements already in this BinarySearchTree object.
      * @throws NullPointerException – if obj is null.
      */
+    @Override
     public boolean contains(Object obj) {
         return (getEntry(obj) != null);
     } // method contains
@@ -126,6 +127,7 @@ public class BinarySearchTree<E> extends AbstractSet<E> {
      * @throws NullPointerException – if element is null.
      *
      */
+    @Override
     public boolean add(E element) {
         if (root == null) {
             if (element == null) {
@@ -177,6 +179,7 @@ public class BinarySearchTree<E> extends AbstractSet<E> {
      * the elements of this BinarySearchTree object.
      * @throws NullPointerException – if obj is null.
      */
+    @Override
     public boolean remove(Object obj) {
         Entry<E> e = getEntry(obj);
         if (e == null) {
